@@ -50,6 +50,12 @@ export interface RemoteOrderRow {
   cancelled_at: string | null;
   cancel_reason: string | null;
   updated_at: string;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  delivery_address?: string | null;
+  delivery_date?: string | null;
+  payment_status?: string | null;
+  delivery_status?: string | null;
   order_items?: RemoteItemRow[];
 }
 

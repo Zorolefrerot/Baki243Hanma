@@ -353,6 +353,15 @@ function mapOrder(row: RemoteOrderRow, at: string): Order {
     cancel_reason: row.cancel_reason,
     updated_at: iso(row.updated_at) ?? at,
     sync_status: 'synced',
+    customer_name: row.customer_name ?? null,
+    customer_phone: row.customer_phone ?? null,
+    delivery_address: row.delivery_address ?? null,
+    delivery_date: row.delivery_date ?? null,
+    payment_status: row.payment_status === 'unpaid' ? 'unpaid' : 'paid',
+    delivery_status:
+      row.delivery_status === 'to_prepare' || row.delivery_status === 'ready' || row.delivery_status === 'delivered'
+        ? row.delivery_status
+        : null,
   };
 }
 

@@ -1,5 +1,5 @@
 /**
- * Base locale IndexedDB (via Dexie).
+ * Base locale (Dexie).
  *
  * Une base par compte (ou une base « locale » en mode sans compte), pour qu'un même
  * téléphone ne mélange jamais les données de deux commerçants.
@@ -25,10 +25,14 @@ export class ShopDatabase extends Dexie {
       sync_operations: '++seq, &op_id, status, entity_id, type, created_at',
       meta: 'key',
     });
+    // v2 : recherche rapide des livraisons par jour de livraison.
+    this.version(2).stores({
+      orders: 'id, created_at, status, sync_status, delivery_date',
+    });
   }
 }
 
-/** Nom de la base IndexedDB selon le mode. */
+/** Nom de la base locale selon le mode. */
 export function databaseName(userId: string | null): string {
   return userId ? `shopflow-rdc:${userId}` : 'shopflow-rdc:local';
 }

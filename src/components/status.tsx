@@ -1,14 +1,15 @@
-/** Libellés et badges d'état (synchronisation, commande, stock). */
+/** Libellés et badges d'état (synchronisation, commande, stock, livraison). */
 import { Badge, type Tone } from './ui';
-import type { EntitySyncStatus, OrderStatus, Product } from '../domain/types';
+import type { DeliveryStatus, EntitySyncStatus, OrderStatus, PaymentStatus, Product } from '../domain/types';
+import { DELIVERY_STATUS_LABELS, PAYMENT_STATUS_LABELS } from '../domain/types';
 import { isLowStock } from '../lib/calc';
 
 const SYNC: Record<EntitySyncStatus, { label: string; tone: Tone }> = {
-  pending: { label: 'Enregistré · en attente d’envoi', tone: 'warning' },
+  pending: { label: 'Synchronisation en attente', tone: 'warning' },
   synced: { label: 'Synchronisé', tone: 'success' },
-  failed: { label: 'Échec de synchronisation', tone: 'danger' },
+  failed: { label: 'À renvoyer', tone: 'danger' },
   conflict: { label: 'Conflit à résoudre', tone: 'danger' },
-  void: { label: 'Non envoyé (abandonné)', tone: 'neutral' },
+  void: { label: 'Abandonné', tone: 'neutral' },
 };
 
 export function SyncBadge({ status }: { status: EntitySyncStatus }) {
@@ -18,6 +19,25 @@ export function SyncBadge({ status }: { status: EntitySyncStatus }) {
 
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {
   return status === 'confirmed' ? <Badge tone="success">Confirmée</Badge> : <Badge tone="danger">Annulée</Badge>;
+}
+
+export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
+  return status === 'paid' ? (
+    <Badge tone="success">{PAYMENT_STATUS_LABELS.paid}</Badge>
+  ) : (
+    <Badge tone="warning">{PAYMENT_STATUS_LABELS.unpaid}</Badge>
+  );
+}
+
+const DELIVERY_TONES: Record<DeliveryStatus, Tone> = {
+  to_prepare: 'warning',
+  ready: 'info',
+  delivered: 'success',
+};
+
+export function DeliveryStatusBadge({ status }: { status: DeliveryStatus | null }) {
+  if (!status) return null;
+  return <Badge tone={DELIVERY_TONES[status]}>{DELIVERY_STATUS_LABELS[status]}</Badge>;
 }
 
 export function StockBadge({ product }: { product: Pick<Product, 'quantity' | 'alert_threshold' | 'status' | 'purchase_price'> }) {

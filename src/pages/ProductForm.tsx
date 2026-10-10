@@ -193,7 +193,7 @@ export function ProductFormPage({ mode }: { mode: 'create' | 'edit' }) {
           </div>
 
           {mode === 'edit' && existing && (
-            <p className="text-sm text-slate-600">
+            <p className="text-sm sf-muted">
               Stock actuel : <span className="font-semibold">{formatInt(existing.quantity)}</span>. Pour modifier la quantité, utilisez « Entrée de stock » ou « Corriger le stock » sur la fiche de l’article.
             </p>
           )}

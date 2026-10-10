@@ -37,7 +37,7 @@ export function ConfirmDialog({
         </div>
       }
     >
-      <div className="text-base leading-relaxed text-slate-700">{message}</div>
+      <div className="text-base leading-relaxed sf-muted">{message}</div>
     </Sheet>
   );
 }

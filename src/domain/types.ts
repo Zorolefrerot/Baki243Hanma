@@ -5,13 +5,19 @@ export type PaymentMethod = 'cash' | 'mobile_money' | 'other';
 export type OrderStatus = 'confirmed' | 'cancelled';
 export type MovementType = 'initial' | 'entry' | 'sale' | 'cancel_restock' | 'correction';
 
+/** État du paiement d'une commande (intégralement payé ou non). */
+export type PaymentStatus = 'paid' | 'unpaid';
+
+/** Étape de préparation / livraison d'une commande à livrer. */
+export type DeliveryStatus = 'to_prepare' | 'ready' | 'delivered';
+
 /** État de synchronisation d'une donnée métier. */
 export type EntitySyncStatus = 'pending' | 'synced' | 'failed' | 'conflict' | 'void';
 
 /** État d'une opération de la file de synchronisation. */
 export type OpStatus = 'pending' | 'syncing' | 'done' | 'failed' | 'conflict' | 'void';
 
-export type OpType = 'upsert_product' | 'stock_movement' | 'create_order' | 'cancel_order' | 'update_shop';
+export type OpType = 'upsert_product' | 'stock_movement' | 'create_order' | 'cancel_order' | 'update_order' | 'update_shop';
 
 export interface Product {
   id: string;
@@ -34,7 +40,19 @@ export interface Product {
   sync_status: EntitySyncStatus;
 }
 
-export interface Order {
+/** Informations client / livraison portées par une commande (optionnelles). */
+export interface OrderCustomer {
+  customer_name: string | null;
+  customer_phone: string | null;
+  delivery_address: string | null;
+  /** Jour de livraison prévu, format AAAA-MM-JJ (heure locale de l'appareil). */
+  delivery_date: string | null;
+  payment_status: PaymentStatus;
+  /** null = vente au comptoir (rien à livrer). */
+  delivery_status: DeliveryStatus | null;
+}
+
+export interface Order extends OrderCustomer {
   id: string;
   shop_id: string;
   /** Date de la vente (saisie sur l'appareil), ISO UTC. */
@@ -104,6 +122,17 @@ export const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   cash: 'Espèces',
   mobile_money: 'Mobile money',
   other: 'Autre',
+};
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  paid: 'Payé',
+  unpaid: 'À encaisser',
+};
+
+export const DELIVERY_STATUS_LABELS: Record<DeliveryStatus, string> = {
+  to_prepare: 'À préparer',
+  ready: 'Prête à livrer',
+  delivered: 'Livrée',
 };
 
 export const DEFAULT_CATEGORIES = [

@@ -1,6 +1,8 @@
 # ShopFlow RDC
 
-Application de gestion commerciale pour petits commerçants en RDC (accessoires, cosmétiques, Kinshasa) : articles et stock, nouvelle commande, historique, tableau de bord, fonctionnement **hors ligne** et synchronisation. Installable comme application sur téléphone (PWA). Interface en français, montants en FC entiers (ex. 12 000 FC).
+Application de gestion commerciale pour petits commerçants en RDC (accessoires, cosmétiques, Kinshasa) : articles et stock, nouvelle commande, **livraisons WhatsApp**, historique, tableau de bord, fonctionnement **hors ligne** et synchronisation. Installable comme application sur téléphone (PWA). Interface en français, montants en FC entiers (ex. 12 000 FC).
+
+**Identité visuelle** : logo « le panier qui monte » (panier + barres de croissance + flèche), palette bleu nuit / turquoise / menthe / corail, mode sombre automatique. Assets dans `public/` (SVG + icônes PWA), regénérables avec `python3 scripts/make-icons.py`.
 
 > La marge brute affichée **ne tient pas compte de toutes les dépenses** (loyer, transport, salaires, etc.).
 
@@ -29,13 +31,15 @@ Téléphone (PWA)                         Render (Node / Express : « npm start 
 **Terminé et testé**
 - Articles : création, modification, catégorie, prix d’achat et de vente, seuil d’alerte, recherche, archivage/réactivation (jamais de suppression définitive).
 - Stock : entrée de stock, correction avec motif obligatoire, mouvements tracés, alerte de stock faible.
-- Nouvelle commande : panier multi-articles, brouillon conservé, mode de paiement obligatoire, récapitulatif avant validation, validation protégée contre le double envoi, stock déduit automatiquement.
+- Nouvelle commande : panier multi-articles, brouillon conservé, mode de paiement obligatoire, récapitulatif avant validation, validation protégée contre le double envoi, stock déduit automatiquement, écran de réussite avec « commande suivante ».
+- **Livraisons (commandes WhatsApp)** : informations client (nom, numéro WhatsApp, adresse, date prévue), état du paiement et de la livraison (à préparer → prête → livrée), vue regroupée aujourd’hui / demain / plus tard, bouton ouvrant la discussion WhatsApp avec un récapitulatif préparé, import d’un message collé (le commerçant vérifie et confirme avant création).
 - Historique : commandes groupées par jour, recherche par identifiant, annulation avec motif (la commande reste visible, le stock est restauré, l’annulation est journalisée).
-- Tableau de bord : chiffre d’affaires, commandes, articles vendus, marge brute estimée, valeur du stock au coût d’achat, stock faible, dernières commandes ; périodes aujourd’hui / hier / 7 jours / ce mois / personnalisée.
+- Tableau de bord : chiffre d’affaires du jour mis en avant, marge brute estimée (distinguée du bénéfice net), commandes, articles vendus, valeur du stock, stock faible, **commandes à préparer et livraisons du jour / du demain**, commandes à encaisser, graphique des ventes ; périodes aujourd’hui / hier / 7 jours / ce mois / personnalisée.
 - Paramètres : nom de la boutique, synchronisation manuelle, file des opérations à traiter, déconnexion, aide, récupération de données.
-- Hors ligne : données dans IndexedDB ; l’interface s’ouvre sans réseau.
-- Synchronisation : file d’opérations idempotente (chaque opération a un identifiant unique, rejouée sans doublon), sync à l’ouverture, au retour au premier plan, au retour de la connexion, et sur bouton manuel.
-- Serveur : API Express (`/healthz`, `/api/config`, `/api/shop/ensure`, `/api/sync/apply`, `/api/sync/pull`), migrations SQL, client HTTP côté application.
+- Hors ligne : données enregistrées sur l’appareil ; l’interface s’ouvre sans réseau. Aucun terme technique n’est affiché au commerçant.
+- Synchronisation : file d’opérations idempotente (chaque opération a un identifiant unique, rejouée sans doublon), sync à l’ouverture, au retour au premier plan, au retour de la connexion, et sur bouton manuel. La confirmation de synchronisation n’est affichée qu’après un accusé serveur réel.
+- Serveur : API Express (`/healthz`, `/api/config`, `/api/shop/ensure`, `/api/sync/apply`, `/api/sync/pull`), migrations SQL, client HTTP côté application. Un `DATABASE_URL` invalide désactive proprement la synchro (mode local) au lieu de faire échouer le démarrage.
+- Design : identité visuelle complète (logo SVG + icônes PWA), composants réutilisables, animations discrètes respectant `prefers-reduced-motion`, mode sombre automatique, pages chargées à la demande.
 
 **Restant (non implémenté, volontairement ou à faire)**
 - Vérification de bout en bout avec un **vrai projet Neon Auth** et un **vrai service Render** : non encore réalisée (voir « Limites »).
@@ -200,12 +204,13 @@ Git vous demandera vos identifiants (ou un *Personal Access Token*). Ne partagez
 ```
 server/          API Express : app.js (routes), db.js (pg, transactions, migrations),
                  auth.js (vérification JWT Neon via JWKS), index.js (démarrage)
-db/migrations/   schéma, RLS, fonctions de synchronisation (SQL)
-scripts/         migrate.mjs (migrations à la main)
+db/migrations/   schéma, RLS, fonctions de synchronisation (SQL) — 004 : champs livraison
+scripts/         migrate.mjs (migrations à la main), make-icons.py (icônes PWA)
 src/             application React (pages, composants, base locale, synchronisation)
 src/auth/        configuration runtime et client Neon Auth
 src/sync/        moteur de sync, client HTTP (remote.ts)
-public/          manifeste PWA, service worker, icônes
+src/lib/         calculs, montants, dates, recherche, WhatsApp (numéros, import de message)
+public/          manifeste PWA, service worker, icônes, logo (logo.svg, favicon.svg)
 tests/           unitaires, intégration (PGlite et PostgreSQL), serveur, build, navigateur
 docs/ARCHITECTURE.md   détail de la synchronisation, du schéma et de la sécurité
 ```

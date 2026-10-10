@@ -258,7 +258,7 @@ describe('migrations', () => {
     const again = await migrate(pgliteDatabase(pg));
     expect(again).toEqual([]);
     const { rows } = await pg.query<{ name: string }>('select name from public.schema_migrations order by name');
-    expect(rows.map((r) => r.name)).toEqual(['001_init_schema.sql', '002_rls_security.sql', '003_sync_functions.sql']);
+    expect(rows.map((r) => r.name)).toEqual(['001_init_schema.sql', '002_rls_security.sql', '003_sync_functions.sql', '004_delivery_fields.sql']);
   });
 
   it('une migration en erreur est annulée entièrement et n’est pas enregistrée', async () => {

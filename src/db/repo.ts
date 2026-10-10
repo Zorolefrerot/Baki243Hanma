@@ -9,14 +9,16 @@
 import { orderTotals, type PricedLine } from '../lib/calc';
 import { multiplyAmount } from '../lib/money';
 import { newId } from '../lib/ids';
-import { validatePaymentMethod, validateProduct, validateReason, type ProductFormValues } from '../domain/validation';
+import { validateDelivery, validateDeliveryStatus, validatePaymentMethod, validatePaymentStatus, validateProduct, validateReason, type ProductFormValues } from '../domain/validation';
 import type {
+  DeliveryStatus,
   EntitySyncStatus,
   Order,
   OrderItem,
   OpStatus,
   OpType,
   PaymentMethod,
+  PaymentStatus,
   Product,
   StockMovement,
   SyncOperation,
@@ -34,7 +36,7 @@ export class BusinessError extends Error {
 
 /** Opérations pouvant encore être traitées (ni terminées, ni annulées). */
 const ACTIVE_STATUSES: OpStatus[] = ['pending', 'syncing', 'failed', 'conflict'];
-const ORDER_OP_TYPES: OpType[] = ['create_order', 'cancel_order'];
+const ORDER_OP_TYPES: OpType[] = ['create_order', 'cancel_order', 'update_order'];
 
 export function nowIso(): string {
   return new Date().toISOString();
@@ -376,11 +378,23 @@ export interface OrderDraftLine {
   quantity: number;
 }
 
+/** Informations client / livraison saisies avec la commande (facultatives). */
+export interface OrderCustomerInput {
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  delivery_address?: string | null;
+  /** AAAA-MM-JJ. Présente => commande à livrer. */
+  delivery_date?: string | null;
+  payment_status?: PaymentStatus;
+  delivery_status?: DeliveryStatus;
+}
+
 export interface CreateOrderInput {
   /** Identifiant fixé à l'ouverture du panier : un double clic ne crée donc jamais deux commandes. */
   id: string;
   lines: OrderDraftLine[];
   payment_method: PaymentMethod;
+  customer?: OrderCustomerInput;
 }
 
 export interface CreatedOrder {
@@ -443,6 +457,35 @@ export async function createOrder(db: ShopDatabase, shopId: string, input: Creat
     const totals = orderTotals(pricedLines);
     const now = nowIso();
 
+    // Informations client / livraison (facultatives) : normalisées puis contrôlées.
+    const customer = input.customer ?? {};
+    const deliveryDate = customer.delivery_date ?? null;
+    const isDelivery = deliveryDate !== null;
+    const paymentStatus: PaymentStatus = customer.payment_status ?? 'paid';
+    const deliveryStatus: DeliveryStatus | null = isDelivery ? customer.delivery_status ?? 'to_prepare' : null;
+    const customerInfo = {
+      customer_name: customer.customer_name?.trim() || null,
+      customer_phone: customer.customer_phone?.trim() || null,
+      delivery_address: customer.delivery_address?.trim() || null,
+      delivery_date: deliveryDate,
+      payment_status: paymentStatus,
+      delivery_status: deliveryStatus,
+    };
+    if (isDelivery) {
+      const deliveryErrors = validateDelivery({
+        customer_name: customerInfo.customer_name ?? '',
+        customer_phone: customerInfo.customer_phone ?? '',
+        delivery_address: customerInfo.delivery_address ?? '',
+        delivery_date: deliveryDate,
+        payment_status: paymentStatus,
+        delivery_status: deliveryStatus ?? 'to_prepare',
+      });
+      const firstError = Object.values(deliveryErrors)[0];
+      if (firstError) throw new BusinessError('invalid_delivery', firstError);
+    } else if (!validatePaymentStatus(paymentStatus)) {
+      throw new BusinessError('invalid_payment_status', 'État du paiement invalide.');
+    }
+
     const order: Order = {
       id: input.id,
       shop_id: shopId,
@@ -457,6 +500,7 @@ export async function createOrder(db: ShopDatabase, shopId: string, input: Creat
       cancel_reason: null,
       updated_at: now,
       sync_status: 'pending',
+      ...customerInfo,
     };
 
     const items: OrderItem[] = [];
@@ -516,6 +560,12 @@ export async function createOrder(db: ShopDatabase, shopId: string, input: Creat
           total_amount: order.total_amount,
           total_cost: order.total_cost,
           total_quantity: order.total_quantity,
+          customer_name: order.customer_name,
+          customer_phone: order.customer_phone,
+          delivery_address: order.delivery_address,
+          delivery_date: order.delivery_date,
+          payment_status: order.payment_status,
+          delivery_status: order.delivery_status,
         },
         items: wireItems,
       },
@@ -756,12 +806,58 @@ export async function updateShopName(db: ShopDatabase, shopId: string, name: str
   });
 }
 
+/**
+ * Met à jour l'état du paiement et/ou de la livraison d'une commande (actions de suivi).
+ * L'écriture locale et l'opération de synchronisation sont faites ensemble.
+ */
+export async function updateOrderFulfillment(
+  db: ShopDatabase,
+  orderId: string,
+  changes: { payment_status?: PaymentStatus; delivery_status?: DeliveryStatus },
+): Promise<Order> {
+  if (changes.payment_status !== undefined && !validatePaymentStatus(changes.payment_status)) {
+    throw new BusinessError('invalid_payment_status', 'État du paiement invalide.');
+  }
+  if (changes.delivery_status !== undefined && !validateDeliveryStatus(changes.delivery_status)) {
+    throw new BusinessError('invalid_delivery_status', 'État de livraison invalide.');
+  }
+  let updated: Order | null = null;
+  await db.transaction('rw', [db.orders, db.sync_operations], async () => {
+    const order = await db.orders.get(orderId);
+    if (!order) throw new BusinessError('not_found', 'Cette commande n’existe plus.');
+    if (order.status === 'cancelled') {
+      throw new BusinessError('cancelled_order', 'Cette commande est annulée : sa mise à jour n’est pas possible.');
+    }
+    const now = nowIso();
+    const patch: Partial<Order> = { updated_at: now, sync_status: 'pending' };
+    if (changes.payment_status !== undefined) patch.payment_status = changes.payment_status;
+    if (changes.delivery_status !== undefined) patch.delivery_status = changes.delivery_status;
+    await db.orders.update(orderId, patch);
+    updated = { ...order, ...patch } as Order;
+    await enqueueOperation(db, {
+      type: 'update_order',
+      entity_id: orderId,
+      payload: {
+        shop_id: order.shop_id,
+        order_id: orderId,
+        updated_at: now,
+        ...(changes.payment_status !== undefined ? { payment_status: changes.payment_status } : {}),
+        ...(changes.delivery_status !== undefined ? { delivery_status: changes.delivery_status } : {}),
+      },
+    });
+  });
+  if (!updated) throw new BusinessError('unknown', 'La commande n’a pas pu être mise à jour.');
+  return updated;
+}
+
 export function operationLabel(type: OpType): string {
   switch (type) {
     case 'create_order':
       return 'Enregistrement d’une commande';
     case 'cancel_order':
       return 'Annulation d’une commande';
+    case 'update_order':
+      return 'Mise à jour d’une commande';
     case 'upsert_product':
       return 'Modification d’un article';
     case 'stock_movement':

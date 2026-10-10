@@ -43,7 +43,7 @@ export function SyncProblems() {
 
   if (!problems || problems.length === 0) {
     return (
-      <div className="flex flex-col gap-2 text-sm text-slate-600">
+      <div className="flex flex-col gap-2 text-sm sf-muted">
         <p>Aucune opération bloquée.</p>
         {waiting > 0 && <p>{waiting} opération(s) en attente d’envoi. Elles partiront automatiquement dès que possible.</p>}
       </div>
@@ -106,14 +106,14 @@ export function SyncProblems() {
           <Card key={op.op_id} className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone={isConflict ? 'warning' : 'danger'}>{isConflict ? 'Conflit' : 'Échec'}</Badge>
-              <p className="text-sm font-semibold text-slate-900">{operationLabel(op.type)}</p>
+              <p className="text-sm font-semibold sf-ink">{operationLabel(op.type)}</p>
             </div>
-            <p className="text-sm text-slate-700">
+            <p className="text-sm sf-muted">
               <span className="font-semibold">{entityName}</span>
             </p>
-            <p className="text-sm leading-relaxed text-slate-600">{op.last_error}</p>
+            <p className="text-sm leading-relaxed sf-muted">{op.last_error}</p>
             {isConflict && serverProduct && (
-              <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-700">
+              <div className="rounded-xl bg-slate-50 dark:bg-white/5 p-3 text-sm sf-muted">
                 <p className="font-semibold">Version sur le serveur :</p>
                 <p>
                   {serverProduct.name} · {formatFC(serverProduct.sale_price)} · stock serveur {serverProduct.quantity}

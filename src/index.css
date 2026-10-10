@@ -1,18 +1,78 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------ */
+/*  Identité visuelle ShopFlow RDC                                     */
+/*  Bleu nuit (confiance) · Turquoise (flux) · Menthe (croissance) ·   */
+/*  Corail (attention). Toutes les surfaces passent par des variables  */
+/*  pour un mode sombre automatique et cohérent.                       */
+/* ------------------------------------------------------------------ */
+
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --color-brand-50: #f0fdfa;
-  --color-brand-100: #ccfbf1;
-  --color-brand-200: #99f6e4;
-  --color-brand-500: #14b8a6;
-  --color-brand-600: #0d9488;
-  --color-brand-700: #0f766e;
-  --color-brand-800: #115e59;
-  --color-brand-900: #134e4a;
+
+  /* Turquoise « flux » : couleur principale de la marque. */
+  --color-brand-50: #eaf7f9;
+  --color-brand-100: #cfedf1;
+  --color-brand-200: #9fd9e1;
+  --color-brand-300: #63bcc8;
+  --color-brand-400: #2e9aab;
+  --color-brand-500: #117c8f;
+  --color-brand-600: #0b6878;
+  --color-brand-700: #0a5462;
+  --color-brand-800: #0b4450;
+  --color-brand-900: #0c3a44;
+
+  /* Bleu nuit : texte, en-têtes, fonds profonds. */
+  --color-navy-500: #2c4a66;
+  --color-navy-600: #1c3a58;
+  --color-navy-700: #143856;
+  --color-navy-800: #0b2239;
+  --color-navy-900: #071829;
+
+  /* Menthe : croissance, succès. */
+  --color-mint-100: #e4f8f0;
+  --color-mint-500: #3ecf9a;
+  --color-mint-600: #22b184;
+  --color-mint-700: #158763;
+
+  /* Corail : attention, actions sensibles. */
+  --color-coral-100: #fde9e4;
+  --color-coral-500: #f2705b;
+  --color-coral-600: #dd5440;
+  --color-coral-700: #b93f2e;
 }
 
-/* Zone tactile : boutons suffisamment grands pour un écran de téléphone. */
+/* Variables sémantiques (claires par défaut, sombres si l'appareil préfère). */
+:root {
+  --sf-bg: #f2f6f8;
+  --sf-surface: #ffffff;
+  --sf-surface-2: #edf3f6;
+  --sf-ink: #0b2239;
+  --sf-ink-2: #3e5669;
+  --sf-ink-3: #74889a;
+  --sf-line: #dde7ee;
+  --sf-shadow: 0 1px 2px rgba(11, 34, 57, 0.06), 0 8px 24px -12px rgba(11, 34, 57, 0.12);
+  --sf-shadow-lg: 0 12px 40px -12px rgba(11, 34, 57, 0.25);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sf-bg: #071829;
+    --sf-surface: #0e2a45;
+    --sf-surface-2: #143752;
+    --sf-ink: #eaf2f8;
+    --sf-ink-2: #a9bdd0;
+    --sf-ink-3: #7e96ab;
+    --sf-line: #1e4062;
+    --sf-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+    --sf-shadow-lg: 0 12px 40px -12px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
+
+/* --------------------------- Base --------------------------- */
+
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -20,8 +80,8 @@ html {
 
 body {
   margin: 0;
-  background: #f6f8f8;
-  color: #0f172a;
+  background: var(--sf-bg);
+  color: var(--sf-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
@@ -31,7 +91,6 @@ body {
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
-
 .safe-top {
   padding-top: env(safe-area-inset-top);
 }
@@ -55,10 +114,78 @@ textarea {
   outline-offset: 2px;
 }
 
+/* --------------------- Surfaces sémantiques ------------------ */
+
+.sf-surface {
+  background: var(--sf-surface);
+}
+.sf-ink {
+  color: var(--sf-ink);
+}
+.sf-muted {
+  color: var(--sf-ink-2);
+}
+.sf-faint {
+  color: var(--sf-ink-3);
+}
+
+/* Carte standard : surface + liseré + ombre légère. */
+.sf-card {
+  background: var(--sf-surface);
+  border: 1px solid var(--sf-line);
+  border-radius: 1.25rem;
+  box-shadow: var(--sf-shadow);
+}
+
+/* Ligne de séparation dans les listes. */
+.sf-divider {
+  border-color: var(--sf-line);
+}
+
+/* En-tête collant translucide. */
+.sf-header {
+  background: color-mix(in srgb, var(--sf-surface) 88%, transparent);
+  border-bottom: 1px solid var(--sf-line);
+  backdrop-filter: blur(12px);
+}
+
+/* Barre de navigation inférieure. */
+.sf-navbar {
+  background: color-mix(in srgb, var(--sf-surface) 92%, transparent);
+  border-top: 1px solid var(--sf-line);
+  backdrop-filter: blur(12px);
+}
+
+/* Champ de saisie. */
+.sf-input {
+  width: 100%;
+  min-height: 3rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--sf-line);
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  padding: 0.75rem 1rem;
+}
+.sf-input::placeholder {
+  color: var(--sf-ink-3);
+}
+.sf-input:focus {
+  outline: none;
+  border-color: var(--color-brand-500);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-brand-500) 18%, transparent);
+}
+
+/* Zone d'appli (page pleine hauteur). */
+.sf-page {
+  background: var(--sf-bg);
+}
+
+/* --------------------- Micro-animations ---------------------- */
+
 @keyframes sf-fade-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -67,7 +194,7 @@ textarea {
 }
 
 .sf-fade-in {
-  animation: sf-fade-in 180ms ease-out;
+  animation: sf-fade-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes sf-sheet-up {
@@ -80,12 +207,64 @@ textarea {
 }
 
 .sf-sheet-up {
-  animation: sf-sheet-up 220ms ease-out;
+  animation: sf-sheet-up 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes sf-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  60% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.sf-pop {
+  animation: sf-pop 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes sf-check {
+  from {
+    stroke-dashoffset: 32;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.sf-check {
+  stroke-dasharray: 32;
+  animation: sf-check 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Barre de progression indéterminée (chargement léger). */
+@keyframes sf-shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+.sf-skeleton {
+  background: linear-gradient(90deg, var(--sf-surface-2) 25%, color-mix(in srgb, var(--sf-surface-2) 60%, var(--sf-line)) 50%, var(--sf-surface-2) 75%);
+  background-size: 200% 100%;
+  animation: sf-shimmer 1.4s ease-in-out infinite;
+  border-radius: 0.75rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .sf-fade-in,
-  .sf-sheet-up {
+  .sf-sheet-up,
+  .sf-pop,
+  .sf-check,
+  .sf-skeleton {
     animation: none;
   }
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useReady } from '../app/useReady';
@@ -13,6 +13,7 @@ import { matchesSearch } from '../lib/text';
 export function ProductsPage() {
   const { db } = useReady();
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const [category, setCategory] = useState<string>('Toutes');
   const [showArchived, setShowArchived] = useState(false);
 
@@ -28,7 +29,7 @@ export function ProductsPage() {
     const list = (products ?? []).filter((p) => {
       if (!showArchived && p.status === 'archived') return false;
       if (category !== 'Toutes' && p.category !== category) return false;
-      return matchesSearch(p.name, query);
+      return matchesSearch(p.name, deferredQuery);
     });
     return list.sort((a, b) => {
       const la = isLowStock(a) ? 0 : 1;
@@ -36,7 +37,7 @@ export function ProductsPage() {
       if (la !== lb) return la - lb;
       return a.name.localeCompare(b.name, 'fr');
     });
-  }, [products, query, category, showArchived]);
+  }, [products, deferredQuery, category, showArchived]);
 
   const lowCount = (products ?? []).filter((p) => isLowStock(p)).length;
 
@@ -60,7 +61,7 @@ export function ProductsPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Rechercher un article…"
-          className="min-h-12 w-full rounded-xl border border-slate-300 bg-white py-3 pl-12 pr-4 text-base placeholder:text-slate-400 focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-100"
+          className="sf-input pl-12"
         />
       </label>
 
@@ -72,7 +73,7 @@ export function ProductsPage() {
             aria-pressed={category === c}
             onClick={() => setCategory(c)}
             className={`min-h-10 shrink-0 rounded-full px-4 text-sm font-semibold ${
-              category === c ? 'bg-brand-700 text-white' : 'bg-white text-slate-700 ring-1 ring-inset ring-slate-300'
+              category === c ? 'bg-brand-600 text-white' : 'sf-surface sf-ink ring-1 ring-inset ring-slate-300 dark:ring-white/15'
             }`}
           >
             {c}
@@ -84,9 +85,9 @@ export function ProductsPage() {
         {lowCount > 0 ? (
           <Badge tone="warning">{lowCount} article(s) en stock faible</Badge>
         ) : (
-          <span className="text-slate-500">Aucun stock faible</span>
+          <span className="sf-faint">Aucun stock faible</span>
         )}
-        <label className="flex min-h-10 items-center gap-2 font-medium text-slate-700">
+        <label className="flex min-h-10 items-center gap-2 font-medium sf-muted">
           <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} className="h-5 w-5 accent-brand-700" />
           Afficher les archivés
         </label>
@@ -98,7 +99,7 @@ export function ProductsPage() {
         <EmptyState
           title="Aucun article pour l’instant"
           action={
-            <Link to="/articles/nouveau" className="inline-flex min-h-12 items-center rounded-xl bg-brand-700 px-5 font-semibold text-white">
+            <Link to="/articles/nouveau" className="inline-flex min-h-12 items-center rounded-xl bg-brand-600 px-5 font-semibold text-white">
               Créer mon premier article
             </Link>
           }
@@ -122,7 +123,7 @@ export function ProductsPage() {
       </ul>
 
       {products && products.length > 0 && (
-        <p className="text-center text-xs text-slate-500">
+        <p className="text-center text-xs sf-faint">
           Un article archivé n’est plus proposé à la vente, mais son historique est conservé.
         </p>
       )}
@@ -134,17 +135,17 @@ function ProductRow({ product }: { product: Product }) {
   return (
     <Link
       to={`/articles/${product.id}`}
-      className={`flex min-h-20 items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70 transition hover:ring-brand-300 active:scale-[0.99] ${product.status === 'archived' ? 'opacity-60' : ''}`}
+      className={`flex min-h-20 items-center justify-between gap-3 sf-card p-4 transition hover:ring-brand-300 active:scale-[0.99] ${product.status === 'archived' ? 'opacity-60' : ''}`}
     >
       <div className="min-w-0">
-        <p className="truncate text-base font-semibold text-slate-900">{product.name}</p>
-        <p className="truncate text-sm text-slate-500">
+        <p className="truncate text-base font-semibold sf-ink">{product.name}</p>
+        <p className="truncate text-sm sf-faint">
           {product.category ?? 'Sans catégorie'} · {formatFC(product.sale_price)}
         </p>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1.5">
         <StockBadge product={product} />
-        <span className="text-sm font-bold tabular-nums text-slate-800">
+        <span className="text-sm font-bold tabular-nums sf-ink">
           {formatInt(product.quantity)} en stock
         </span>
       </div>

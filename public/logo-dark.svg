@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" role="img" aria-label="ShopFlow RDC">
+  <!-- Version pour fond sombre -->
+  <g>
+    <path d="M18 29 H46 L43.4 50.5 Q42.8 55.5 38.2 55.5 H25.8 Q21.2 55.5 20.6 50.5 Z" fill="#2e9aab"/>
+    <rect x="14.5" y="23.5" width="35" height="6.5" rx="3.25" fill="#2e9aab"/>
+    <path d="M26.5 43 V50" stroke="#3ecf9a" stroke-width="4.6" stroke-linecap="round" fill="none"/>
+    <path d="M32.5 38.5 V50" stroke="#9fd9e1" stroke-width="4.6" stroke-linecap="round" fill="none"/>
+    <path d="M38.5 33.5 V50" stroke="#ffffff" stroke-width="4.6" stroke-linecap="round" fill="none"/>
+    <path d="M23 23.5 C 22 11 35 8 44 11.5" stroke="#2e9aab" stroke-width="4.6" stroke-linecap="round" fill="none"/>
+    <path d="M50 6.5 L41.5 10.5 L45.5 17 Z" fill="#f2705b"/>
+  </g>
+  <text x="68" y="43" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="30" font-weight="800" letter-spacing="-0.5">
+    <tspan fill="#eaf2f8">Shop</tspan><tspan fill="#63bcc8" font-weight="700">Flow</tspan>
+  </text>
+  <g transform="translate(228,23)">
+    <rect x="0" y="0" width="44" height="22" rx="11" fill="#143752"/>
+    <text x="22" y="15.5" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="800" fill="#3ecf9a" letter-spacing="1">RDC</text>
+  </g>
+</svg>

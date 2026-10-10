@@ -85,11 +85,11 @@ export function SettingsPage() {
       <PageHeader title="Paramètres" subtitle="Votre boutique, votre compte et la synchronisation." />
 
       <Card as="section" className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Boutique</h2>
+        <h2 className="sf-muted text-sm font-bold uppercase tracking-[0.14em]">Boutique</h2>
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm text-slate-500">Nom affiché sur l’application</p>
-            <p className="truncate text-lg font-bold text-slate-900">{shop.name}</p>
+            <p className="text-sm sf-faint">Nom affiché sur l’application</p>
+            <p className="truncate text-lg font-bold sf-ink">{shop.name}</p>
           </div>
           <Button variant="secondary" size="md" onClick={() => { setName(shop.name); setNameOpen(true); }}>
             Modifier
@@ -98,47 +98,43 @@ export function SettingsPage() {
       </Card>
 
       <Card as="section" className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Compte</h2>
+        <h2 className="sf-muted text-sm font-bold uppercase tracking-[0.14em]">Compte</h2>
         {app.mode === 'remote' ? (
           <>
-            <p className="text-sm text-slate-700">
-              Connecté avec <span className="font-semibold text-slate-900">{app.auth.email ?? 'votre compte'}</span>.
+            <p className="text-sm sf-muted">
+              Connecté avec <span className="font-semibold sf-ink">{app.auth.email ?? 'votre compte'}</span>.
             </p>
             <Button variant="secondary" block onClick={() => setLogoutOpen(true)}>
               <IconLogout size={18} /> Se déconnecter
             </Button>
-            <p className="text-xs leading-relaxed text-slate-500">
+            <p className="text-xs leading-relaxed sf-faint">
               La déconnexion ne supprime pas les données de cet appareil. Pour les retrouver, reconnectez-vous avec le même compte.
             </p>
           </>
         ) : (
-          <Banner tone="warning" title="Mode local (sans compte)">
-            Les données restent sur cet appareil uniquement. Aucune sauvegarde distante n’est active. Configurez Neon Auth et la base Neon pour créer des comptes et sauvegarder vos données (voir le README).
+          <Banner tone="info" title="Aucun compte connecté">
+            Vos données sont conservées sur cet appareil et l’application fonctionne pleinement. Créez un compte pour retrouver vos données sur un autre téléphone.
           </Banner>
         )}
       </Card>
 
       <Card as="section" className="flex flex-col gap-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Synchronisation</h2>
+        <h2 className="sf-muted text-sm font-bold uppercase tracking-[0.14em]">Synchronisation</h2>
         <dl className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <dt className="text-slate-500">Connexion</dt>
-            <dd className="font-semibold text-slate-900">{app.online ? 'Internet disponible' : 'Hors ligne'}</dd>
+            <dt className="sf-faint">Connexion</dt>
+            <dd className="font-semibold sf-ink">{app.online ? 'Internet disponible' : 'Hors ligne'}</dd>
           </div>
           <div>
-            <dt className="text-slate-500">Dernière synchro réussie</dt>
-            <dd className="font-semibold text-slate-900">{app.lastSyncAt ? formatDateTime(app.lastSyncAt) : 'Jamais'}</dd>
+            <dt className="sf-faint">Dernière synchro réussie</dt>
+            <dd className="font-semibold sf-ink">{app.lastSyncAt ? formatDateTime(app.lastSyncAt) : 'Jamais'}</dd>
           </div>
           <div>
-            <dt className="text-slate-500">En attente d’envoi</dt>
-            <dd className="font-semibold text-slate-900">{formatInt(counts?.pending ?? 0)}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Mode</dt>
-            <dd className="font-semibold text-slate-900">{app.mode === 'remote' ? 'Serveur (Neon)' : 'Local uniquement'}</dd>
+            <dt className="sf-faint">En attente d’envoi</dt>
+            <dd className="font-semibold sf-ink">{formatInt(counts?.pending ?? 0)}</dd>
           </div>
         </dl>
-        {lastSync && <p className="text-sm text-slate-700">{lastSync.message}</p>}
+        {lastSync && <p className="text-sm sf-muted">{lastSync.message}</p>}
         <Button
           block
           variant="secondary"
@@ -148,24 +144,23 @@ export function SettingsPage() {
           <IconSync size={18} className={app.sync.running ? 'animate-spin' : ''} />
           {app.sync.running ? 'Synchronisation en cours…' : 'Synchroniser maintenant'}
         </Button>
-        {app.mode === 'local' && <p className="text-xs text-slate-500">La synchronisation est indisponible en mode local.</p>}
-        <p className="text-xs leading-relaxed text-slate-500">
+        <p className="text-xs leading-relaxed sf-faint">
           Une synchronisation a lieu à l’ouverture de l’application, au retour au premier plan et au retour de la connexion. Sur iPhone, l’application ne synchronise pas quand elle est fermée ou en arrière-plan.
         </p>
       </Card>
 
       <section aria-labelledby="problems-title" className="flex flex-col gap-3">
-        <h2 id="problems-title" className="text-sm font-semibold uppercase tracking-wide text-slate-500">Opérations à traiter</h2>
+        <h2 id="problems-title" className="sf-muted text-sm font-bold uppercase tracking-[0.14em]">Opérations à traiter</h2>
         <SyncProblems />
       </section>
 
       <Card as="section" className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Données de cet appareil</h2>
-        <p className="text-sm text-slate-700">
+        <h2 className="sf-muted text-sm font-bold uppercase tracking-[0.14em]">Données de cet appareil</h2>
+        <p className="text-sm sf-muted">
           {formatInt(counts?.products ?? 0)} article(s) et {formatInt(counts?.orders ?? 0)} commande(s) enregistrés sur cet appareil.
         </p>
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-slate-600">Stockage protégé :</span>
+          <span className="sf-muted">Stockage protégé :</span>
           {persisted === null ? <Badge>Inconnu</Badge> : persisted ? <Badge tone="success">Oui</Badge> : <Badge tone="warning">Non</Badge>}
         </div>
         {persisted === false && (
@@ -173,14 +168,14 @@ export function SettingsPage() {
             Demander un stockage protégé
           </Button>
         )}
-        <p className="text-xs leading-relaxed text-slate-500">
-          Ne supprimez pas les données du navigateur ou de l’application avant d’avoir synchronisé : les opérations non envoyées seraient perdues. Les sauvegardes du téléphone ne remplacent pas la synchronisation.
+        <p className="text-xs leading-relaxed sf-faint">
+          N’effacez pas les données de l’application avant d’avoir synchronisé : les opérations non envoyées seraient perdues. Une sauvegarde du téléphone ne remplace pas la synchronisation.
         </p>
       </Card>
 
       <Card as="section" className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Changer d’appareil ou récupérer vos données</h2>
-        <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed text-slate-700">
+        <h2 className="sf-muted text-sm font-bold uppercase tracking-[0.14em]">Changer d’appareil ou récupérer vos données</h2>
+        <ol className="list-decimal space-y-2 pl-5 text-sm leading-relaxed sf-muted">
           <li>Sur l’ancien appareil, ouvrez Paramètres et lancez une synchronisation. Vérifiez qu’aucune opération n’est en attente.</li>
           <li>Sur le nouvel appareil, ouvrez ShopFlow RDC et connectez-vous avec le même email et le même mot de passe.</li>
           <li>Vos articles, commandes et mouvements de stock sont téléchargés automatiquement. Attendez le message « Synchronisation réussie ».</li>
@@ -188,8 +183,8 @@ export function SettingsPage() {
       </Card>
 
       <Card as="section" className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Aide rapide</h2>
-        <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed text-slate-700">
+        <h2 className="sf-muted text-sm font-bold uppercase tracking-[0.14em]">Aide rapide</h2>
+        <ul className="list-disc space-y-2 pl-5 text-sm leading-relaxed sf-muted">
           <li>Créez vos articles une seule fois dans l’onglet Articles.</li>
           <li>Pour vendre, touchez « Nouvelle commande » en bas, ajoutez les articles, choisissez le paiement, puis confirmez.</li>
           <li>Une erreur de stock insuffisant bloque la vente : rien n’est enregistré à moitié.</li>
@@ -198,7 +193,7 @@ export function SettingsPage() {
         </ul>
       </Card>
 
-      <p className="pb-2 text-center text-xs text-slate-400">ShopFlow RDC · version {APP_VERSION}</p>
+      <p className="pb-2 text-center text-xs sf-faint">ShopFlow RDC · version {APP_VERSION}</p>
 
       <Sheet
         open={nameOpen}
@@ -227,7 +222,7 @@ export function SettingsPage() {
           <>
             <p>Vos données restent sur cet appareil.</p>
             {(counts?.pending ?? 0) > 0 && (
-              <p className="mt-3 font-semibold text-amber-900">
+              <p className="mt-3 font-semibold text-amber-800 dark:text-amber-200">
                 {counts?.pending} opération(s) ne sont pas encore envoyées au serveur. Elles resteront sur cet appareil et seront envoyées à la prochaine connexion avec ce compte. Connectez-vous à Internet et synchronisez avant de vous déconnecter si possible.
               </p>
             )}

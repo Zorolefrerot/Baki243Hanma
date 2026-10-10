@@ -1,6 +1,6 @@
 /** Validation des saisies (même règles côté interface et côté couche locale). */
 import { isValidAmount } from '../lib/money';
-import type { PaymentMethod } from './types';
+import type { DeliveryStatus, PaymentMethod, PaymentStatus } from './types';
 
 export interface ProductFormValues {
   name: string;
@@ -58,6 +58,54 @@ export function validateProduct(values: ProductFormValues, mode: 'create' | 'edi
 
 export function validatePaymentMethod(value: string): value is PaymentMethod {
   return value === 'cash' || value === 'mobile_money' || value === 'other';
+}
+
+export const MAX_CUSTOMER_NAME = 120;
+export const MAX_PHONE = 25;
+export const MAX_ADDRESS = 200;
+
+export interface DeliveryFormValues {
+  customer_name: string;
+  customer_phone: string;
+  delivery_address: string;
+  delivery_date: string;
+  payment_status: PaymentStatus;
+  delivery_status: DeliveryStatus;
+}
+
+export function validatePaymentStatus(value: string): value is PaymentStatus {
+  return value === 'paid' || value === 'unpaid';
+}
+
+export function validateDeliveryStatus(value: string): value is DeliveryStatus {
+  return value === 'to_prepare' || value === 'ready' || value === 'delivered';
+}
+
+/** Valide les informations client / livraison d'une commande à livrer. */
+export function validateDelivery(values: DeliveryFormValues): FieldErrors<keyof DeliveryFormValues> {
+  const errors: FieldErrors<keyof DeliveryFormValues> = {};
+  const name = values.customer_name.trim();
+  const phone = values.customer_phone.trim();
+  const address = values.delivery_address.trim();
+
+  if (name.length === 0) errors.customer_name = 'Indiquez le nom du client.';
+  else if (name.length > MAX_CUSTOMER_NAME) errors.customer_name = `Le nom ne doit pas dépasser ${MAX_CUSTOMER_NAME} caractères.`;
+
+  if (phone.length > MAX_PHONE) errors.customer_phone = `Le numéro ne doit pas dépasser ${MAX_PHONE} caractères.`;
+
+  if (address.length > MAX_ADDRESS) errors.delivery_address = `L’adresse ne doit pas dépasser ${MAX_ADDRESS} caractères.`;
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(values.delivery_date)) {
+    errors.delivery_date = 'Indiquez la date prévue de livraison.';
+  }
+
+  if (!validatePaymentStatus(values.payment_status)) {
+    errors.payment_status = 'Choisissez l’état du paiement.';
+  }
+  if (!validateDeliveryStatus(values.delivery_status)) {
+    errors.delivery_status = 'Choisissez l’état de la livraison.';
+  }
+  return errors;
 }
 
 export const CANCEL_REASONS = [

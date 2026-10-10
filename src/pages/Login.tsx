@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useApp } from '../app/AppContext';
 import { Banner, Button, Card, Field, TextInput } from '../components/ui';
+import { LogoFull } from '../components/Logo';
 import { useAsyncAction } from '../components/Confirm';
 import { useToast } from '../components/Toast';
 
@@ -9,12 +10,12 @@ const MIN_PASSWORD = 8;
 function Brand() {
   return (
     <div className="flex flex-col items-center gap-3 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-700 text-xl font-extrabold text-white shadow-md" aria-hidden="true">
-        SF
+      <div className="sf-pop">
+        <LogoFull size={56} />
       </div>
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">ShopFlow RDC</h1>
-        <p className="mt-1 text-sm text-slate-600">Vos ventes et votre stock, même sans Internet.</p>
+        <h1 className="sf-ink text-2xl font-extrabold tracking-tight">Vos ventes, votre stock</h1>
+        <p className="sf-muted mt-1 text-sm">Simple, rapide, et disponible même sans Internet.</p>
       </div>
     </div>
   );
@@ -63,7 +64,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-gradient-to-b from-brand-50 to-slate-50 px-4 py-10">
+    <div className="sf-page flex min-h-dvh flex-col items-center justify-center px-4 py-10" style={{ background: 'linear-gradient(180deg, #eaf7f9 0%, var(--sf-bg) 55%)' }}>
       <div className="flex w-full max-w-sm flex-col gap-6">
         <Brand />
         <Card className="flex flex-col gap-5 p-5">
@@ -152,7 +153,7 @@ export function OnboardingPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-gradient-to-b from-brand-50 to-slate-50 px-4 py-10">
+    <div className="sf-page flex min-h-dvh flex-col items-center justify-center px-4 py-10" style={{ background: 'linear-gradient(180deg, #eaf7f9 0%, var(--sf-bg) 55%)' }}>
       <div className="flex w-full max-w-sm flex-col gap-6">
         <Brand />
         <Card className="flex flex-col gap-4 p-5">

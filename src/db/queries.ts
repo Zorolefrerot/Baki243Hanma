@@ -4,9 +4,18 @@
  */
 import { isLowStock, marginRate, orderTotals, stockValue } from '../lib/calc';
 import { addAmounts } from '../lib/money';
-import { inPeriod, type Period } from '../lib/dates';
+import { computePeriod, inPeriod, startOfDay, addDays, toDateInput, type Period } from '../lib/dates';
 import type { Order, OrderItem, Product } from '../domain/types';
 import type { ShopDatabase } from './database';
+
+/** Clés de jour (AAAA-MM-JJ) pour aujourd'hui et demain. */
+function dayKeys(now: Date): { today: string; tomorrow: string } {
+  return { today: toDateInput(now), tomorrow: toDateInput(addDays(startOfDay(now), 1)) };
+}
+
+function computeTodayPeriod(): Period {
+  return computePeriod('today', new Date());
+}
 
 export interface SeriesPoint {
   key: string;
@@ -30,6 +39,15 @@ export interface DashboardData {
   recentOrders: Order[];
   series: SeriesPoint[];
   seriesGranularity: 'hour' | 'day' | 'month';
+  /** Synthèse du jour, toujours visible. */
+  today: { revenue: number; grossMargin: number; orderCount: number; marginPercent: number };
+  /** Commandes à livrer non encore prêtes. */
+  toPrepareCount: number;
+  /** Livraisons prévues aujourd'hui et demain. */
+  deliveriesToday: Order[];
+  deliveriesTomorrow: Order[];
+  /** Commandes à encaisser. */
+  unpaidCount: number;
 }
 
 /** Ventes confirmées (hors annulées) et leurs lignes, pour une période. */
@@ -62,10 +80,11 @@ function bucketKey(iso: string, granularity: DashboardData['seriesGranularity'])
 }
 
 export async function loadDashboard(db: ShopDatabase, period: Period): Promise<DashboardData> {
-  const [products, recentOrders, sales] = await Promise.all([
+  const [products, recentOrders, sales, allOrders] = await Promise.all([
     db.products.toArray(),
     db.orders.orderBy('created_at').reverse().limit(5).toArray(),
     confirmedSalesInPeriod(db, period),
+    db.orders.toArray(),
   ]);
 
   const orderIds = new Set(sales.orders.map((o) => o.id));
@@ -75,6 +94,23 @@ export async function loadDashboard(db: ShopDatabase, period: Period): Promise<D
   const cost = addAmounts(0, ...itemsInPeriod.map((i) => i.line_cost));
   const quantitySold = itemsInPeriod.reduce((sum, i) => sum + i.quantity, 0);
   const grossMargin = revenue - cost;
+
+  // Synthèse du jour (indépendante du filtre de période).
+  const todayPeriod = computeTodayPeriod();
+  const todaySales = await confirmedSalesInPeriod(db, todayPeriod);
+  const todayIds = new Set(todaySales.orders.map((o) => o.id));
+  const todayItems = todaySales.items.filter((i) => todayIds.has(i.order_id));
+  const todayRevenue = addAmounts(0, ...todayItems.map((i) => i.line_total));
+  const todayCost = addAmounts(0, ...todayItems.map((i) => i.line_cost));
+  const todayMargin = todayRevenue - todayCost;
+
+  // Livraisons : aujourd'hui, demain, et préparation en cours.
+  const { today: todayKey, tomorrow: tomorrowKey } = dayKeys(new Date());
+  const live = allOrders.filter((o) => o.status === 'confirmed' && o.delivery_date !== null);
+  const deliveriesToday = live.filter((o) => o.delivery_date === todayKey).sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const deliveriesTomorrow = live.filter((o) => o.delivery_date === tomorrowKey).sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const toPrepareCount = live.filter((o) => o.delivery_status === 'to_prepare').length;
+  const unpaidCount = allOrders.filter((o) => o.status === 'confirmed' && o.payment_status === 'unpaid').length;
 
   // Granularité du graphique selon la durée de la période.
   let granularity: DashboardData['seriesGranularity'] = 'day';
@@ -116,6 +152,41 @@ export async function loadDashboard(db: ShopDatabase, period: Period): Promise<D
     recentOrders,
     series,
     seriesGranularity: granularity,
+    today: {
+      revenue: todayRevenue,
+      grossMargin: todayMargin,
+      orderCount: todaySales.orders.length,
+      marginPercent: marginRate(todayRevenue, todayMargin),
+    },
+    toPrepareCount,
+    deliveriesToday,
+    deliveriesTomorrow,
+    unpaidCount,
+  };
+}
+
+export interface DeliveriesData {
+  today: Order[];
+  tomorrow: Order[];
+  later: Order[];
+  doneRecently: Order[];
+}
+
+/** Toutes les commandes à livrer, regroupées par jour de livraison. */
+export async function loadDeliveries(db: ShopDatabase): Promise<DeliveriesData> {
+  const { today: todayKey, tomorrow: tomorrowKey } = dayKeys(new Date());
+  const all = (await db.orders.toArray())
+    .filter((o) => o.delivery_date !== null && (o.status === 'confirmed' || o.cancelled_at !== null))
+    .sort((a, b) => (a.delivery_date! === b.delivery_date! ? a.created_at.localeCompare(b.created_at) : a.delivery_date!.localeCompare(b.delivery_date!)));
+  const live = all.filter((o) => o.status === 'confirmed');
+  return {
+    today: live.filter((o) => o.delivery_date === todayKey && o.delivery_status !== 'delivered'),
+    tomorrow: live.filter((o) => o.delivery_date === tomorrowKey && o.delivery_status !== 'delivered'),
+    later: live.filter((o) => o.delivery_date! > tomorrowKey && o.delivery_status !== 'delivered'),
+    doneRecently: all
+      .filter((o) => o.delivery_status === 'delivered' || o.status === 'cancelled')
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+      .slice(0, 20),
   };
 }
 

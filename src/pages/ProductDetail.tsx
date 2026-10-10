@@ -124,9 +124,9 @@ export function ProductDetailPage() {
           <SyncBadge status={product.sync_status} />
           {product.category && <Badge tone="neutral">{product.category}</Badge>}
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{product.name}</h1>
+        <h1 className="text-2xl font-bold tracking-tight sf-ink">{product.name}</h1>
         {(opsCount ?? 0) > 0 && product.sync_status !== 'synced' && (
-          <p className="text-sm text-slate-600">Modifications en attente d’envoi vers le serveur.</p>
+          <p className="text-sm sf-muted">Modifications en attente d’envoi vers le serveur.</p>
         )}
       </header>
 
@@ -134,20 +134,20 @@ export function ProductDetailPage() {
 
       <div className="grid grid-cols-2 gap-3">
         <Card className="flex flex-col gap-1">
-          <p className="text-sm text-slate-600">Stock disponible</p>
+          <p className="text-sm sf-muted">Stock disponible</p>
           <p className={`text-3xl font-extrabold tabular-nums ${product.quantity <= 0 ? 'text-rose-700' : isLowStock(product) ? 'text-amber-700' : 'text-brand-800'}`}>
             {formatInt(product.quantity)}
           </p>
-          <p className="text-xs text-slate-500">Seuil d’alerte : {formatInt(product.alert_threshold)}</p>
+          <p className="text-xs sf-faint">Seuil d’alerte : {formatInt(product.alert_threshold)}</p>
         </Card>
         <Card className="flex flex-col gap-1">
-          <p className="text-sm text-slate-600">Prix de vente</p>
-          <p className="text-2xl font-bold tabular-nums text-slate-900">{formatFC(product.sale_price)}</p>
-          <p className="text-xs text-slate-500">Achat : {formatFC(product.purchase_price)}</p>
+          <p className="text-sm sf-muted">Prix de vente</p>
+          <p className="text-2xl font-bold tabular-nums sf-ink">{formatFC(product.sale_price)}</p>
+          <p className="text-xs sf-faint">Achat : {formatFC(product.purchase_price)}</p>
         </Card>
       </div>
-      <p className="text-sm text-slate-600">
-        Valeur de ce stock au coût d’achat : <span className="font-semibold text-slate-900">{formatFC(value)}</span>
+      <p className="text-sm sf-muted">
+        Valeur de ce stock au coût d’achat : <span className="font-semibold sf-ink">{formatFC(value)}</span>
       </p>
 
       {!archived && (
@@ -157,7 +157,7 @@ export function ProductDetailPage() {
           <Link to={`/articles/${id}/modifier`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white px-4 font-semibold text-brand-800 ring-1 ring-inset ring-slate-300 hover:bg-slate-50">
             <IconEdit size={18} /> Modifier
           </Link>
-          <Button variant="ghost" onClick={() => setArchiveOpen(true)} className="text-slate-700">
+          <Button variant="ghost" onClick={() => setArchiveOpen(true)} className="sf-muted">
             <IconArchive size={18} /> Archiver
           </Button>
         </div>
@@ -172,19 +172,19 @@ export function ProductDetailPage() {
       )}
 
       <section aria-labelledby="sync-title" className="flex flex-col gap-3">
-        <h2 id="sync-title" className="text-sm font-semibold uppercase tracking-wide text-slate-500">Synchronisation</h2>
+        <h2 id="sync-title" className="text-sm font-semibold uppercase tracking-wide sf-faint">Synchronisation</h2>
         <SyncProblems />
       </section>
 
       <section aria-labelledby="mov-title" className="flex flex-col gap-3">
-        <h2 id="mov-title" className="text-sm font-semibold uppercase tracking-wide text-slate-500">Mouvements de stock</h2>
-        {movements && movements.length === 0 && <p className="text-sm text-slate-600">Aucun mouvement pour l’instant.</p>}
+        <h2 id="mov-title" className="text-sm font-semibold uppercase tracking-wide sf-faint">Mouvements de stock</h2>
+        {movements && movements.length === 0 && <p className="text-sm sf-muted">Aucun mouvement pour l’instant.</p>}
         <ul className="flex flex-col gap-2">
           {(movements ?? []).slice(0, 100).map((m) => (
             <li key={m.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200/70">
               <div className="min-w-0">
-                <p className="font-semibold text-slate-900">{MOVEMENT_LABELS[m.type]}</p>
-                <p className="truncate text-xs text-slate-500">
+                <p className="font-semibold sf-ink">{MOVEMENT_LABELS[m.type]}</p>
+                <p className="truncate text-xs sf-faint">
                   {formatDateTime(m.created_at)}
                   {m.reason && m.type !== 'sale' ? ` · ${m.reason}` : ''}
                 </p>
@@ -194,7 +194,7 @@ export function ProductDetailPage() {
                   {m.quantity_delta > 0 ? '+' : ''}
                   {formatInt(m.quantity_delta)}
                 </p>
-                <p className="text-xs text-slate-500">Stock : {formatInt(m.quantity_after)}</p>
+                <p className="text-xs sf-faint">Stock : {formatInt(m.quantity_after)}</p>
               </div>
             </li>
           ))}
@@ -212,8 +212,8 @@ export function ProductDetailPage() {
         }
       >
         <form id="stock-form" className="flex flex-col gap-5" onSubmit={submitStock} noValidate>
-          <p className="text-sm text-slate-600">
-            Stock actuel : <span className="font-semibold text-slate-900">{formatInt(product.quantity)}</span>
+          <p className="text-sm sf-muted">
+            Stock actuel : <span className="font-semibold sf-ink">{formatInt(product.quantity)}</span>
           </p>
           {sheet === 'correction' && (
             <div role="radiogroup" aria-label="Sens de la correction" className="grid grid-cols-2 gap-2">
@@ -224,7 +224,7 @@ export function ProductDetailPage() {
                   role="radio"
                   aria-checked={sign === s}
                   onClick={() => setSign(s)}
-                  className={`min-h-12 rounded-xl text-sm font-semibold ring-1 ring-inset ${sign === s ? 'bg-brand-700 text-white ring-brand-700' : 'bg-white text-slate-700 ring-slate-300'}`}
+                  className={`min-h-12 rounded-xl text-sm font-semibold ring-1 ring-inset ${sign === s ? 'bg-brand-600 text-white ring-brand-700' : 'bg-white sf-muted ring-slate-300'}`}
                 >
                   {s === 'add' ? 'Ajouter au stock' : 'Retirer du stock'}
                 </button>

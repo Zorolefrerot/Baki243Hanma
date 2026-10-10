@@ -48,7 +48,7 @@ export function PeriodFilter({
               aria-pressed={active}
               onClick={() => onChange(o.kind)}
               className={`min-h-10 shrink-0 rounded-full px-4 text-sm font-semibold transition ${
-                active ? 'bg-brand-700 text-white shadow-sm' : 'bg-white text-slate-700 ring-1 ring-inset ring-slate-300 hover:bg-slate-50'
+                active ? 'bg-brand-600 text-white shadow-sm' : 'sf-surface sf-ink ring-1 ring-inset ring-slate-300 dark:ring-white/15 hover:bg-slate-50 dark:bg-white/5'
               }`}
             >
               {o.label}
@@ -58,24 +58,24 @@ export function PeriodFilter({
       </div>
       {value === 'custom' && (
         <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">
+          <label className="flex flex-col gap-1 text-sm font-semibold sf-muted">
             Du
             <input
               type="date"
               value={custom.from}
               max={custom.to}
               onChange={(e) => onCustomChange({ ...custom, from: e.target.value })}
-              className="min-h-12 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base font-normal text-slate-900"
+              className="min-h-12 rounded-xl border sf-surface border-slate-300 dark:border-white/15 px-3 py-2 text-base font-normal sf-ink"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold text-slate-700">
+          <label className="flex flex-col gap-1 text-sm font-semibold sf-muted">
             Au
             <input
               type="date"
               value={custom.to}
               min={custom.from}
               onChange={(e) => onCustomChange({ ...custom, to: e.target.value })}
-              className="min-h-12 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base font-normal text-slate-900"
+              className="min-h-12 rounded-xl border sf-surface border-slate-300 dark:border-white/15 px-3 py-2 text-base font-normal sf-ink"
             />
           </label>
         </div>

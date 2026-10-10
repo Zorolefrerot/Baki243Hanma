@@ -77,6 +77,7 @@ Règles de synchronisation confirmées (testées dans `tests/integration/sync.te
 1. `001_init_schema.sql` : tables `shops`, `shop_profiles` (lien compte → boutique, `user_id text`), `products`, `orders`, `order_items`, `stock_movements`, `remote_operations` ; fonction `current_user_id()`.
 2. `002_rls_security.sql` : RLS activée sur toutes les tables ; politiques de lecture limitées à la boutique du compte (`is_shop_member`). Pas de politique d’écriture : les écritures passent par les fonctions.
 3. `003_sync_functions.sql` : `ensure_shop`, `apply_sync_operation` et ses opérations (`op_create_order`, `op_cancel_order`, `op_upsert_product`, `op_stock_movement`, `op_update_shop`).
+4. `004_delivery_fields.sql` : colonnes client / livraison sur `public.orders` (`customer_name`, `customer_phone`, `delivery_address`, `delivery_date`, `payment_status`, `delivery_status`), enrichissement de `op_create_order`, nouvelle opération `op_update_order` (suivi paiement / livraison).
 
 ### Identité dans la base
 
@@ -101,6 +102,13 @@ Les tables ne référencent pas `auth.users` : les identifiants Neon Auth sont d
 - Modifier un article ne modifie jamais les lignes des commandes existantes (testé en local et côté serveur).
 - Une annulation conserve la commande, restaure le stock (`cancel_restock`) et exige un motif.
 - Le stock ne devient jamais négatif : une vente au-delà du stock est refusée sans rien écrire.
+
+### Commandes à livrer (WhatsApp)
+
+- Une commande peut porter des informations client / livraison : nom, numéro WhatsApp, adresse, jour prévu (`AAAA-MM-JJ`), état du paiement (`paid` / `unpaid`) et étape de livraison (`to_prepare` → `ready` → `delivered`). Ces champs voyagent dans le payload de `create_order` et sont enregistrés par `op_create_order`.
+- Les changements d’état (« marquer prête », « marquer livrée », « encaisser ») passent par l’opération `update_order`, idempotente comme les autres (dernier écrit gagne sur les champs concernés).
+- Le bouton WhatsApp construit un lien `wa.me/<numéro international>` avec un récapitulatif préparé. L’import d’un message collé (`src/lib/whatsapp.ts`) est une **aide à la saisie** : le commerçant vérifie et confirme toujours avant la création. Aucune conversation privée n’est lue.
+- Les numéros sont normalisés au format international (`2438…` pour la RDC) à la saisie et à l’import.
 
 ## Limites techniques
 
