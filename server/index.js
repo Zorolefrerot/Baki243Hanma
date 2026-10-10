@@ -28,10 +28,18 @@ async function main() {
 
   let db = null;
   if (config.databaseUrl) {
-    db = createPgDatabase(config.databaseUrl);
-    if (config.migrateOnStart) {
-      const applied = await migrate(db);
-      console.log(`[db] migrations appliquées : ${applied.length ? applied.join(', ') : 'aucune (à jour)'}`);
+    try {
+      db = createPgDatabase(config.databaseUrl);
+      if (config.migrateOnStart) {
+        const applied = await migrate(db);
+        console.log(`[db] migrations appliquées : ${applied.length ? applied.join(', ') : 'aucune (à jour)'}`);
+      }
+    } catch (error) {
+      if (db) await db.close().catch(() => {});
+      db = null;
+      console.error(`[db] connexion impossible (${error.message}).`);
+      console.error('[db] Vérifiez la variable DATABASE_URL (format attendu : postgresql://UTILISATEUR:MOT_DE_PASSE@HOTE.neon.tech/neondb?sslmode=require).');
+      console.error('[db] Synchronisation désactivée : l’application reste utilisable en mode local.');
     }
   } else {
     console.log('[db] DATABASE_URL absente : synchronisation désactivée (mode local).');
