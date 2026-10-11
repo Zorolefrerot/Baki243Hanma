@@ -213,5 +213,13 @@ src/sync/        moteur de sync, client HTTP (remote.ts)
 src/lib/         calculs, montants, dates, recherche, WhatsApp (numéros, import de message)
 public/          manifeste PWA, service worker, icônes, logo (logo.svg, favicon.svg)
 tests/           unitaires, intégration (PGlite et PostgreSQL), serveur, build, navigateur
+site/            site vitrine (accueil + tutoriel illustré), statique et autonome
 docs/ARCHITECTURE.md   détail de la synchronisation, du schéma et de la sécurité
 ```
+
+## Site vitrine
+
+Le dossier `site/` contient le site de présentation du projet (fichiers HTML autonomes, sans dépendance) :
+accueil (`index.html`) avec téléchargement pour iPhone / Android / Windows, FAQ et contacts
+(WhatsApp +243 84 564 471, shopflowrdc@gmail.com) ; tutoriel illustré pas à pas (`tutoriel.html`).
+À servir comme site statique — voir `site/README.md`.
