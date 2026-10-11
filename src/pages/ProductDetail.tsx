@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useReady } from '../app/useReady';
 import { adjustStock, addStockEntry, setProductArchived } from '../db/repo';
 import { Badge, Banner, Button, Card, Field, Sheet, Spinner, TextInput } from '../components/ui';
+import { ProductThumb } from '../components/ProductImage';
 import { IconArchive, IconBack, IconEdit } from '../components/icons';
 import { SyncBadge, StockBadge } from '../components/status';
 import { ConfirmDialog, useAsyncAction } from '../components/Confirm';
@@ -118,16 +119,19 @@ export function ProductDetailPage() {
         <IconBack size={18} /> Articles
       </Link>
 
-      <header className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <StockBadge product={product} />
-          <SyncBadge status={product.sync_status} />
-          {product.category && <Badge tone="neutral">{product.category}</Badge>}
+      <header className="flex items-start gap-4">
+        <ProductThumb image={product.image} thumb={product.image_thumb} name={product.name} size={96} />
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <StockBadge product={product} />
+            <SyncBadge status={product.sync_status} />
+            {product.category && <Badge tone="neutral">{product.category}</Badge>}
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight sf-ink">{product.name}</h1>
+          {(opsCount ?? 0) > 0 && product.sync_status !== 'synced' && (
+            <p className="text-sm sf-muted">Modifications en attente d’envoi vers le serveur.</p>
+          )}
         </div>
-        <h1 className="text-2xl font-bold tracking-tight sf-ink">{product.name}</h1>
-        {(opsCount ?? 0) > 0 && product.sync_status !== 'synced' && (
-          <p className="text-sm sf-muted">Modifications en attente d’envoi vers le serveur.</p>
-        )}
       </header>
 
       {formError && !sheet && <Banner tone="danger">{formError}</Banner>}

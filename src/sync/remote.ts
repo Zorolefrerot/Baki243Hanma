@@ -26,6 +26,15 @@ export interface RemoteProductRow {
   created_at: string;
   updated_at: string;
   archived_at: string | null;
+  /** Photo présente côté serveur (les octets se récupèrent séparément, à la demande). */
+  has_image?: boolean;
+  image_updated_at?: string | null;
+}
+
+/** Photo d'un article telle que le serveur la restitue. */
+export interface RemoteProductImage {
+  blob: Blob;
+  updated_at: string | null;
 }
 
 export interface RemoteItemRow {
@@ -81,6 +90,8 @@ export interface RemoteSnapshot {
 export interface RemoteAdapter {
   apply(op: { op_id: string; type: OpType; payload: Record<string, unknown> }): Promise<RemoteResult>;
   pull(shopId: string): Promise<RemoteSnapshot>;
+  /** Photo d'un article (facultatif : les adaptateurs de test peuvent l'omettre). */
+  getProductImage?(productId: string): Promise<RemoteProductImage | null>;
 }
 
 /** Échec de transport (hors ligne, réseau coupé, délai dépassé) : l'opération reste en attente. */
@@ -187,6 +198,30 @@ export function createHttpRemote(options: ApiClientOptions): RemoteAdapter & { e
 
     pull(shopId) {
       return post<RemoteSnapshot>('/api/sync/pull', { shop_id: shopId });
+    },
+
+    async getProductImage(productId: string): Promise<RemoteProductImage | null> {
+      const { getToken, fetchImpl = fetch, baseUrl = '' } = options;
+      let token: string | null;
+      try {
+        token = await getToken();
+      } catch {
+        throw new TransportError();
+      }
+      if (!token) throw new TransportError(SESSION_EXPIRED);
+      let res: Response;
+      try {
+        res = await fetchImpl(`${baseUrl}/api/products/${productId}/image`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch {
+        throw new TransportError();
+      }
+      if (res.status === 401) throw new TransportError(SESSION_EXPIRED);
+      if (res.status === 404) return null;
+      if (!res.ok) throw new TransportError(SERVER_UNAVAILABLE);
+      const blob = await res.blob();
+      return { blob, updated_at: res.headers.get('Last-Modified') };
     },
   };
 }

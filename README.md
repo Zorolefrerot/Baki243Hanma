@@ -30,6 +30,7 @@ Téléphone (PWA)                         Render (Node / Express : « npm start 
 
 **Terminé et testé**
 - Articles : création, modification, catégorie, prix d’achat et de vente, seuil d’alerte, recherche, archivage/réactivation (jamais de suppression définitive).
+- **Photo des articles** : une photo par article (caméra ou galerie), automatiquement allégée pour rester rapide, affichée dans la liste des articles, la fiche et la saisie de commande ; la photo voyage seule (elle n’alourdit jamais les modifications du catalogue) et reste disponible hors connexion.
 - Stock : entrée de stock, correction avec motif obligatoire, mouvements tracés, alerte de stock faible.
 - Nouvelle commande : panier multi-articles, brouillon conservé, mode de paiement obligatoire, récapitulatif avant validation, validation protégée contre le double envoi, stock déduit automatiquement, écran de réussite avec « commande suivante ».
 - **Livraisons (commandes WhatsApp)** : informations client (nom, numéro WhatsApp, adresse, date prévue), état du paiement et de la livraison (à préparer → prête → livrée), vue regroupée aujourd’hui / demain / plus tard, bouton ouvrant la discussion WhatsApp avec un récapitulatif préparé, import d’un message collé (le commerçant vérifie et confirme avant création).

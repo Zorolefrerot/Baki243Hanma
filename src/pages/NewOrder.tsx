@@ -7,6 +7,7 @@ import { createOrder, BusinessError } from '../db/repo';
 import { DEFAULT_CATEGORIES, DELIVERY_STATUS_LABELS, PAYMENT_LABELS, PAYMENT_STATUS_LABELS, type DeliveryStatus, type PaymentMethod, type PaymentStatus, type Product } from '../domain/types';
 import { validateDelivery } from '../domain/validation';
 import { Badge, Banner, Button, Card, EmptyState, PageHeader, Sheet, TextArea, TextInput } from '../components/ui';
+import { ProductThumb } from '../components/ProductImage';
 import { IconCart, IconClipboard, IconPlus, IconSearch, IconTruck, IconWhatsApp } from '../components/icons';
 import { useToast } from '../components/Toast';
 import { formatFC, formatInt, multiplyAmount, addAmounts } from '../lib/money';
@@ -531,12 +532,15 @@ export function NewOrderPage() {
                 const out = p.quantity <= 0;
                 return (
                   <li key={p.id} className={`sf-card sf-pop flex items-center justify-between gap-3 p-3 ${out ? 'opacity-60' : ''}`}>
-                    <div className="min-w-0 flex-1">
-                      <p className="sf-ink truncate font-semibold">{p.name}</p>
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <ProductThumb image={p.image} thumb={p.image_thumb} name={p.name} size={48} />
+                      <div className="min-w-0">
+                        <p className="sf-ink truncate font-semibold">{p.name}</p>
                       <p className="sf-muted text-sm">
                         <span className="font-semibold tabular-nums">{formatFC(p.sale_price)}</span> ·{' '}
                         <span className={out ? 'font-semibold text-coral-700 dark:text-coral-500' : ''}>{out ? 'Rupture' : `${formatInt(p.quantity)} en stock`}</span>
                       </p>
+                      </div>
                     </div>
                     {inCart > 0 ? (
                       <Stepper value={inCart} max={p.quantity} label={p.name} onChange={(q) => setLineQuantity(p.id, q)} />

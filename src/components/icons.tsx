@@ -172,6 +172,12 @@ export const IconX = (p: P) => (
     <path d="M6 6l12 12M18 6 6 18" />
   </Svg>
 );
+export const IconCamera = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.7a1 1 0 0 0 .84-.46l.94-1.4A1 1 0 0 1 10.82 3.6h2.36a1 1 0 0 1 .84.54l.94 1.4a1 1 0 0 0 .84.46h1.7A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-8Z" />
+    <circle cx="12" cy="12.5" r="3.4" />
+  </Svg>
+);
 export const IconWhatsApp = (p: P) => (
   <svg
     width={p.size ?? 22}

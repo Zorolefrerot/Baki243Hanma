@@ -83,7 +83,14 @@ async function readSnapshot(tx, shopId) {
   if (!allowed[0]?.ok) return null;
 
   const shop = await tx.query('select to_jsonb(s) as j from public.shops s where s.id = $1', [shopId]);
-  const products = await tx.query('select to_jsonb(p) as j from public.products p where p.shop_id = $1 order by p.id', [shopId]);
+  const products = await tx.query(
+    `select to_jsonb(p) || jsonb_build_object(
+       'has_image', exists (select 1 from public.product_images pi where pi.product_id = p.id),
+       'image_updated_at', (select pi.updated_at from public.product_images pi where pi.product_id = p.id)
+     ) as j
+     from public.products p where p.shop_id = $1 order by p.id`,
+    [shopId],
+  );
   const orders = await tx.query(
     `select to_jsonb(o) || jsonb_build_object('order_items',
        coalesce((select jsonb_agg(to_jsonb(i) order by i.id) from public.order_items i where i.order_id = o.id), '[]'::jsonb)
@@ -134,7 +141,8 @@ export function createApp({ db = null, verifyToken = null, authUrl = '', distDir
     res.json({ authUrl });
   });
 
-  app.use(express.json({ limit: '256kb' }));
+  // Limite élevée pour transporter les photos des articles (compressées, base64) dans /api/sync/apply.
+  app.use(express.json({ limit: '4mb' }));
 
   const auth = requireUser(verifyToken, logger);
   const dbReady = requireDatabase(db);
@@ -182,6 +190,38 @@ export function createApp({ db = null, verifyToken = null, authUrl = '', distDir
         return;
       }
       res.json(snapshot);
+    } catch (error) {
+      sendDatabaseError(res, error, logger);
+    }
+  });
+
+  // Photo d'un article (lecture paresseuse, uniquement pour la boutique du compte).
+  app.get('/api/products/:id/image', dbReady, auth, async (req, res) => {
+    const productId = req.params.id;
+    if (typeof productId !== 'string' || !UUID_RE.test(productId)) {
+      res.status(400).json({ error: 'invalid_request' });
+      return;
+    }
+    try {
+      const rows = await withUser(db, req.userId, (tx) =>
+        tx.query(
+          `select pi.data, pi.mime, pi.updated_at, pi.shop_id
+             from public.product_images pi
+             join public.products p on p.id = pi.product_id
+            where pi.product_id = $1::uuid
+              and public.is_shop_member(pi.shop_id)`,
+          [productId],
+        ),
+      );
+      if (rows.length === 0) {
+        res.status(404).json({ error: 'image_not_found' });
+        return;
+      }
+      const row = rows[0];
+      res.setHeader('Content-Type', row.mime || 'image/jpeg');
+      res.setHeader('Cache-Control', 'private, max-age=86400');
+      res.setHeader('Last-Modified', new Date(row.updated_at).toUTCString());
+      res.send(Buffer.from(row.data));
     } catch (error) {
       sendDatabaseError(res, error, logger);
     }

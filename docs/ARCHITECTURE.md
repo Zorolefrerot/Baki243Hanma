@@ -78,6 +78,12 @@ Règles de synchronisation confirmées (testées dans `tests/integration/sync.te
 2. `002_rls_security.sql` : RLS activée sur toutes les tables ; politiques de lecture limitées à la boutique du compte (`is_shop_member`). Pas de politique d’écriture : les écritures passent par les fonctions.
 3. `003_sync_functions.sql` : `ensure_shop`, `apply_sync_operation` et ses opérations (`op_create_order`, `op_cancel_order`, `op_upsert_product`, `op_stock_movement`, `op_update_shop`).
 4. `004_delivery_fields.sql` : colonnes client / livraison sur `public.orders` (`customer_name`, `customer_phone`, `delivery_address`, `delivery_date`, `payment_status`, `delivery_status`), enrichissement de `op_create_order`, nouvelle opération `op_update_order` (suivi paiement / livraison).
+5. `005_product_images.sql` : table `public.product_images` (photo + miniature par article), RLS de lecture limitée aux membres, fonction `op_update_product_image` (envoi ou retrait d’une photo, plafond de taille), intégrée à `apply_sync_operation`.
+
+### Photos des articles
+
+- Côté application : la photo est compressée à la sélection (`src/lib/images.ts`, 1024 px JPEG + miniature 256 px), stockée sur l’article local et envoyée par une opération dédiée `update_product_image` (jamais renvoyée lors des modifications du catalogue).
+- Côté serveur : la photo est stockée en binaire dans `product_images` ; le téléchargement (`/api/sync/pull`) n’envoie qu’un signalement (« une photo existe », date de mise à jour), et les octets sont récupérés à la demande par `GET /api/products/:id/image` (réservé aux membres de la boutique).
 
 ### Identité dans la base
 

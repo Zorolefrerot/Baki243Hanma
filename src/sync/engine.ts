@@ -13,6 +13,7 @@
  */
 import type { ShopDatabase } from '../db/database';
 import { recomputeEntitySync } from '../db/repo';
+import { compressProductImage } from '../lib/images';
 import type { EntitySyncStatus, Order, OrderItem, Product, StockMovement, SyncOperation } from '../domain/types';
 import { ServerError, TransportError, type RemoteAdapter, type RemoteOrderRow, type RemoteProductRow, type RemoteSnapshot } from './remote';
 
@@ -157,6 +158,15 @@ export async function runSync(ctx: EngineContext): Promise<SyncReport> {
     return report;
   }
 
+  // Photos des articles : récupérées à la demande, sans jamais bloquer la synchronisation.
+  if (remote.getProductImage) {
+    try {
+      await syncProductImages(db, remote);
+    } catch {
+      // Meilleur effort : la photo sera réessayée au prochain cycle.
+    }
+  }
+
   if (report.needsAttention > 0) {
     report.outcome = 'partial';
     report.message = `${report.needsAttention} opération(s) demandent votre attention. Ouvrez Paramètres > Synchronisation.`;
@@ -256,7 +266,8 @@ export async function mergeSnapshot(
 
     for (const row of snap.products) {
       if (busyEntities.has(row.id)) continue;
-      await db.products.put(mapProduct(row, at));
+      const local = await db.products.get(row.id);
+      await db.products.put(mapProduct(row, at, local));
     }
 
     const localMovements = await db.stock_movements.toArray();
@@ -319,7 +330,50 @@ export async function mergeSnapshot(
   });
 }
 
-function mapProduct(row: RemoteProductRow, at: string): Product {
+/**
+ * Récupère les photos manquantes ou obsolètes depuis le serveur (meilleur effort).
+ * Une photo jamais bloquée : en cas d'échec réseau, elle sera réessayée au cycle suivant.
+ */
+export async function syncProductImages(db: ShopDatabase, remote: RemoteAdapter): Promise<number> {
+  if (!remote.getProductImage) return 0;
+  const candidates = await db.products.filter((p) => Boolean(p.has_remote_image)).toArray();
+  let fetched = 0;
+  for (const product of candidates) {
+    try {
+      const img = await remote.getProductImage(product.id);
+      if (!img) {
+        await db.products.update(product.id, { has_remote_image: false });
+        continue;
+      }
+      // Miniature générée localement à partir de la photo reçue.
+      let thumb: Blob = img.blob;
+      try {
+        const compressed = await compressProductImage(img.blob);
+        thumb = compressed.thumb;
+      } catch {
+        // Compression indisponible (tests, vieux navigateur) : on garde l'image telle quelle.
+      }
+      await db.products.update(product.id, {
+        image: img.blob,
+        image_thumb: thumb,
+        image_updated_at: img.updated_at ? new Date(img.updated_at).toISOString() : product.image_updated_at,
+        has_remote_image: false,
+      });
+      fetched += 1;
+    } catch {
+      // Hors ligne ou erreur : on continue avec les autres photos.
+    }
+  }
+  return fetched;
+}
+
+function mapProduct(row: RemoteProductRow, at: string, local?: Product): Product {
+  // Photo : on garde toujours le binaire local ; on signale seulement qu'une version
+  // plus récente existe côté serveur (récupérée ensuite, à la demande).
+  const remoteImageAt = row.image_updated_at ?? null;
+  const localImageAt = local?.image_updated_at ?? null;
+  const remoteHasImage = Boolean(row.has_image);
+  const needsImage = remoteHasImage && (!local?.image || !localImageAt || (remoteImageAt !== null && remoteImageAt > localImageAt));
   return {
     id: row.id,
     shop_id: row.shop_id,
@@ -335,6 +389,10 @@ function mapProduct(row: RemoteProductRow, at: string): Product {
     archived_at: iso(row.archived_at),
     version: Number(row.version),
     sync_status: 'synced',
+    image: local?.image ?? null,
+    image_thumb: local?.image_thumb ?? null,
+    image_updated_at: needsImage ? localImageAt : remoteHasImage ? (remoteImageAt ?? localImageAt) : localImageAt,
+    has_remote_image: needsImage,
   };
 }
 

@@ -17,7 +17,7 @@ export type EntitySyncStatus = 'pending' | 'synced' | 'failed' | 'conflict' | 'v
 /** État d'une opération de la file de synchronisation. */
 export type OpStatus = 'pending' | 'syncing' | 'done' | 'failed' | 'conflict' | 'void';
 
-export type OpType = 'upsert_product' | 'stock_movement' | 'create_order' | 'cancel_order' | 'update_order' | 'update_shop';
+export type OpType = 'upsert_product' | 'stock_movement' | 'create_order' | 'cancel_order' | 'update_order' | 'update_product_image' | 'update_shop';
 
 export interface Product {
   id: string;
@@ -38,6 +38,14 @@ export interface Product {
   /** Dernière version connue côté serveur (0 = jamais synchronisé). Sert à détecter les conflits. */
   version: number;
   sync_status: EntitySyncStatus;
+  /** Photo de l'article (stockée sur l'appareil, jamais dans les opérations du catalogue). */
+  image: Blob | null;
+  /** Miniature de la photo (listes). */
+  image_thumb: Blob | null;
+  /** Date de dernière mise à jour de la photo (ISO UTC), pour la synchronisation. */
+  image_updated_at: string | null;
+  /** Le serveur détient une photo pour cet article (photo d'un autre appareil à récupérer). */
+  has_remote_image?: boolean;
 }
 
 /** Informations client / livraison portées par une commande (optionnelles). */

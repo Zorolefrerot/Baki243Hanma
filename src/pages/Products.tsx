@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useReady } from '../app/useReady';
 import { DEFAULT_CATEGORIES, type Product } from '../domain/types';
 import { Badge, EmptyState, PageHeader, Spinner } from '../components/ui';
+import { ProductThumb } from '../components/ProductImage';
 import { IconPlus, IconSearch } from '../components/icons';
 import { StockBadge } from '../components/status';
 import { formatFC, formatInt } from '../lib/money';
@@ -137,11 +138,14 @@ function ProductRow({ product }: { product: Product }) {
       to={`/articles/${product.id}`}
       className={`flex min-h-20 items-center justify-between gap-3 sf-card p-4 transition hover:ring-brand-300 active:scale-[0.99] ${product.status === 'archived' ? 'opacity-60' : ''}`}
     >
-      <div className="min-w-0">
-        <p className="truncate text-base font-semibold sf-ink">{product.name}</p>
+      <div className="flex min-w-0 items-center gap-3">
+        <ProductThumb image={product.image} thumb={product.image_thumb} name={product.name} size={52} />
+        <div className="min-w-0">
+          <p className="truncate text-base font-semibold sf-ink">{product.name}</p>
         <p className="truncate text-sm sf-faint">
           {product.category ?? 'Sans catégorie'} · {formatFC(product.sale_price)}
         </p>
+        </div>
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1.5">
         <StockBadge product={product} />

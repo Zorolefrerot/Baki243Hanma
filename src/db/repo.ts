@@ -9,6 +9,7 @@
 import { orderTotals, type PricedLine } from '../lib/calc';
 import { multiplyAmount } from '../lib/money';
 import { newId } from '../lib/ids';
+import { blobToBase64 } from '../lib/images';
 import { validateDelivery, validateDeliveryStatus, validatePaymentMethod, validatePaymentStatus, validateProduct, validateReason, type ProductFormValues } from '../domain/validation';
 import type {
   DeliveryStatus,
@@ -116,7 +117,12 @@ function assertValid(values: ProductFormValues, mode: 'create' | 'edit'): void {
   if (first) throw new BusinessError('validation', first);
 }
 
-export async function createProduct(db: ShopDatabase, shopId: string, values: ProductFormValues): Promise<Product> {
+export async function createProduct(
+  db: ShopDatabase,
+  shopId: string,
+  values: ProductFormValues,
+  image?: { blob: Blob; thumb: Blob } | null,
+): Promise<Product> {
   assertValid(values, 'create');
   const id = newId();
   const now = nowIso();
@@ -133,6 +139,10 @@ export async function createProduct(db: ShopDatabase, shopId: string, values: Pr
     archived_at: null,
     version: 0,
     sync_status: 'pending',
+    image: image?.blob ?? null,
+    image_thumb: image?.thumb ?? null,
+    image_updated_at: image ? now : null,
+    has_remote_image: false,
   };
 
   const initialMovementId = values.initial_quantity > 0 ? newId() : null;
@@ -170,8 +180,61 @@ export async function createProduct(db: ShopDatabase, shopId: string, values: Pr
         },
       },
     });
+    if (image) {
+      await enqueueOperation(db, {
+        type: 'update_product_image',
+        entity_id: id,
+        payload: {
+          shop_id: shopId,
+          product_id: id,
+          image_base64: await blobToBase64(image.blob),
+          mime: 'image/jpeg',
+          image_updated_at: product.image_updated_at,
+        },
+      });
+    }
   });
   return product;
+}
+
+/**
+ * Modifie (ou supprime) la photo d'un article : écriture locale et envoi sont faits ensemble.
+ * L'opération d'image est indépendante des modifications du catalogue : une simple
+ * correction de prix ne renvoie jamais la photo.
+ */
+export async function updateProductImage(
+  db: ShopDatabase,
+  productId: string,
+  image: { blob: Blob; thumb: Blob } | null,
+): Promise<Product> {
+  let updated: Product | null = null;
+  await db.transaction('rw', [db.products, db.sync_operations], async () => {
+    const product = await db.products.get(productId);
+    if (!product) throw new BusinessError('not_found', 'Cet article n’existe plus.');
+    const now = nowIso();
+    const patch: Partial<Product> = {
+      image: image?.blob ?? null,
+      image_thumb: image?.thumb ?? null,
+      image_updated_at: image ? now : null,
+      sync_status: 'pending',
+    };
+    await db.products.update(productId, patch);
+    updated = { ...product, ...patch } as Product;
+    await enqueueOperation(db, {
+      type: 'update_product_image',
+      entity_id: productId,
+      payload: {
+        shop_id: product.shop_id,
+        product_id: productId,
+        image_updated_at: patch.image_updated_at,
+        ...(image
+          ? { image_base64: await blobToBase64(image.blob), mime: 'image/jpeg' }
+          : { clear: true }),
+      },
+    });
+  });
+  if (!updated) throw new BusinessError('unknown', 'La photo n’a pas pu être mise à jour.');
+  return updated;
 }
 
 /**
@@ -860,6 +923,8 @@ export function operationLabel(type: OpType): string {
       return 'Mise à jour d’une commande';
     case 'upsert_product':
       return 'Modification d’un article';
+    case 'update_product_image':
+      return 'Photo d’un article';
     case 'stock_movement':
       return 'Mouvement de stock';
     case 'update_shop':

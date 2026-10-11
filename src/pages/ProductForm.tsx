@@ -2,14 +2,16 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useReady } from '../app/useReady';
-import { createProduct, updateProduct } from '../db/repo';
+import { createProduct, updateProduct, updateProductImage } from '../db/repo';
 import { DEFAULT_CATEGORIES } from '../domain/types';
 import { validateProduct, type FieldErrors, type ProductFormValues } from '../domain/validation';
 import { Banner, Button, Card, Field, PageHeader, Spinner, TextInput } from '../components/ui';
+import { ProductImageInput } from '../components/ProductImage';
 import { IconBack } from '../components/icons';
 import { useToast } from '../components/Toast';
 import { useAsyncAction } from '../components/Confirm';
 import { formatFC, parseAmount, percentOf, formatInt } from '../lib/money';
+import type { ProductImageSet } from '../lib/images';
 
 interface RawForm {
   name: string;
@@ -57,6 +59,7 @@ export function ProductFormPage({ mode }: { mode: 'create' | 'edit' }) {
   );
 
   const [raw, setRaw] = useState<RawForm>(EMPTY);
+  const [image, setImage] = useState<ProductImageSet | Blob | null>(null);
   const [hydrated, setHydrated] = useState(mode === 'create');
   const [touched, setTouched] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -73,6 +76,7 @@ export function ProductFormPage({ mode }: { mode: 'create' | 'edit' }) {
         alert_threshold: String(existing.alert_threshold),
         initial_quantity: String(existing.quantity),
       });
+      setImage(existing.image ?? null);
       setHydrated(true);
     }
   }, [existing, hydrated, mode]);
@@ -111,12 +115,16 @@ export function ProductFormPage({ mode }: { mode: 'create' | 'edit' }) {
       return;
     }
     await run(async () => {
+      const newImage = image && !(image instanceof Blob) ? image : null;
       if (mode === 'create') {
-        const product = await createProduct(db, shop.id, values);
+        const product = await createProduct(db, shop.id, values, newImage);
         toast.show('Article créé.', 'success');
         navigate(`/articles/${product.id}`, { replace: true });
       } else if (id) {
         await updateProduct(db, id, values);
+        // Photo : nouvelle sélection à envoyer, ou suppression explicite.
+        if (newImage) await updateProductImage(db, id, newImage);
+        else if (image === null && existing?.image) await updateProductImage(db, id, null);
         toast.show('Article modifié.', 'success');
         navigate(`/articles/${id}`, { replace: true });
       }
@@ -139,6 +147,17 @@ export function ProductFormPage({ mode }: { mode: 'create' | 'edit' }) {
 
       <form className="flex flex-col gap-4" onSubmit={onSubmit} noValidate>
         <Card className="flex flex-col gap-5">
+          <Field label="Photo de l’article" hint="Une belle photo aide à reconnaître l’article au moment de la vente.">
+            {() => (
+              <ProductImageInput
+                value={image}
+                name={raw.name || 'l’article'}
+                onChange={setImage}
+                onError={(msg) => setFormError(msg)}
+              />
+            )}
+          </Field>
+
           <Field label="Nom de l’article" required error={showErr('name')} hint="Exemple : Brume corps vanille 200 ml">
             {(fid, desc) => (
               <TextInput id={fid} aria-describedby={desc} value={raw.name} onChange={(e) => update('name', e.target.value)} maxLength={120} error={!!showErr('name')} autoFocus={mode === 'create'} autoComplete="off" />
