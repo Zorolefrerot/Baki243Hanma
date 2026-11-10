@@ -43,6 +43,6 @@
     "@electric-sql/pglite": "^0.5.8",
     "@playwright/test": "^1.64.0",
     "fake-indexeddb": "^6.2.5",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   }
 }
